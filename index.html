@@ -54,6 +54,14 @@ h2.huge{font-size:118px}
 .row{display:flex}.gap32{gap:32px}.gap48{gap:48px}.aic{align-items:center}.flex1{flex:1}
 .glass{background:linear-gradient(160deg,rgba(220,235,245,.11),rgba(220,235,245,.025));border:1px solid rgba(220,235,245,.16);border-radius:26px;padding:30px 34px;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 30px 80px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:8px}
 .glass.tight{padding:22px 26px;font-size:20px;line-height:1.4}
+.glass.ic{position:relative;padding-right:150px}
+.glass .gi{position:absolute;right:40px;top:50%;width:68px;height:68px;margin-top:-34px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;opacity:.9}
+.glass.tint-a{background:linear-gradient(160deg,rgba(110,190,255,.20),rgba(110,190,255,.04));border-color:rgba(110,190,255,.38);color:#bfe3ff}
+.glass.tint-b{background:linear-gradient(160deg,rgba(180,140,255,.20),rgba(180,140,255,.04));border-color:rgba(180,140,255,.38);color:#d8c6ff}
+.glass.tint-c{background:linear-gradient(160deg,rgba(255,120,150,.19),rgba(255,120,150,.04));border-color:rgba(255,120,150,.38);color:#ffc2cf}
+.glass.tint-a b,.glass.tint-b b,.glass.tint-c b{color:var(--snow)}
+.glass.tint-a span,.glass.tint-b span,.glass.tint-c span{color:#c9d6e0}
+body.m .glass.ic{padding-right:170px}body.m .glass .gi{width:84px;height:84px;margin-top:-42px;right:36px}
 .glass.warm{background:linear-gradient(160deg,rgba(255,153,0,.17),rgba(255,153,0,.035));border-color:rgba(255,153,0,.42)}
 .glass b{font-size:28px;font-weight:500;color:var(--snow)}
 .glass span{font-size:24px;line-height:1.4}
@@ -123,7 +131,12 @@ ul.clean li::before{content:'';display:inline-block;width:18px;height:2px;backgr
 .topbar{position:absolute;left:120px;right:120px;top:100px}
 .steps4{position:absolute;left:120px;right:120px;bottom:110px;display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
 .steps4.three-up{grid-template-columns:repeat(3,1fr)}
+.demo-s .steps4{bottom:200px}
 .steps4 .glass{gap:12px}.steps4 .disp{font-size:66px}.steps4 p{font-size:22px;line-height:1.4}
+.glass.note{position:absolute;left:50%;transform:translateX(-50%);bottom:62px;display:flex;flex-direction:row;align-items:center;gap:22px;padding:16px 30px;border-radius:999px;background:linear-gradient(160deg,rgba(159,216,236,.16),rgba(159,216,236,.04));border-color:rgba(159,216,236,.3);white-space:nowrap}
+.glass.note svg{color:var(--ice);flex:none;filter:drop-shadow(0 0 8px rgba(159,216,236,.6))}
+.glass.note .kick{display:block;margin-bottom:2px}.glass.note p{font-size:22px;margin:0;color:rgba(235,244,250,.85)}
+body.m .glass.note{position:static;transform:none;border-radius:36px;white-space:normal}
 .foot{position:absolute;left:120px;right:120px;bottom:40px;text-align:center;font-size:26px}
 .parts{display:flex;flex-direction:column;gap:14px}
 .parts div{display:grid;grid-template-columns:120px 1fr;gap:20px;padding:20px 26px;border-radius:20px;background:rgba(220,235,245,.06);border:1px solid rgba(220,235,245,.12);backdrop-filter:blur(12px)}
@@ -181,10 +194,35 @@ code{font:400 20px 'IBM Plex Mono',monospace;color:var(--ice)}
 #overview b{font:500 13px 'IBM Plex Mono',monospace;color:var(--ice)}
 #help{position:fixed;right:24px;bottom:24px;padding:18px 22px;border-radius:14px;background:rgba(5,8,15,.92);border:1px solid rgba(220,235,245,.2);font:400 14px/1.8 'IBM Plex Mono',monospace;color:#c9d2d9;display:none;z-index:10}
 #help.open{display:block}
-#hint{position:fixed;right:22px;bottom:18px;font:400 12px 'IBM Plex Mono',monospace;color:#3f4a55;pointer-events:none}
+#hint{position:fixed;right:48px;bottom:52px;font:400 12px 'IBM Plex Mono',monospace;color:#3f4a55;pointer-events:none}
 #loading{position:fixed;inset:0;background:var(--ink);display:flex;align-items:center;justify-content:center;z-index:30;transition:opacity .9s;font:400 14px 'IBM Plex Mono',monospace;color:var(--ice)}
 #loading.done{opacity:0;pointer-events:none}
 
+/* radar compare timeline */
+.radar .col{top:60px;bottom:270px;justify-content:flex-start;gap:22px}
+.radar h2{margin-top:30px}
+.cmp{--lw:150px;position:absolute;left:120px;bottom:34px;width:1130px;padding:22px 30px 16px;border-radius:22px;background:linear-gradient(160deg,rgba(220,235,245,.10),rgba(220,235,245,.03));border:1px solid rgba(220,235,245,.18);backdrop-filter:blur(16px)}
+.cmp-row{display:flex;align-items:center;gap:20px;height:56px}
+.cmp-l{width:130px;font:500 20px 'IBM Plex Mono',monospace;color:var(--ice)}
+.cmp-bar{position:relative;flex:1;height:2px;background:rgba(159,216,236,.28)}
+.cmp-bar .pass{position:absolute;top:-13px;width:4px;height:28px;border-radius:2px;background:var(--ice);box-shadow:0 0 14px rgba(159,216,236,.8)}
+.cmp-bar em{position:absolute;top:20px;transform:translateX(-50%);font:400 15px 'IBM Plex Mono',monospace;color:var(--mute);font-style:normal;white-space:nowrap;margin-left:2px}
+.cmp-bar.dense{background:repeating-linear-gradient(90deg,var(--flare) 0 2px,transparent 2px 9px);height:22px;opacity:.9;background-color:transparent}
+.cmp-flood{position:absolute;top:14px;bottom:44px;width:0;border-left:2px dashed rgba(255,176,32,.7)}
+.cmp-flood b{position:absolute;top:0;left:8px;font:500 16px 'IBM Plex Mono',monospace;color:var(--flare)}
+.cmp-ax{display:flex;justify-content:space-between;margin:6px 0 0 150px;font:400 15px 'IBM Plex Mono',monospace;color:var(--mute)}
+.cmp-cap{margin:8px 0 0 150px;font-size:22px;color:var(--snow)}
+body.m .cmp{position:static!important;width:auto!important}
+body.m .cmp-row{height:80px}body.m .cmp-l{width:190px;font-size:30px}body.m .cmp-bar em,body.m .cmp-ax,body.m .cmp-flood b{font-size:24px}body.m .cmp-ax{margin-left:210px}body.m .cmp-cap{margin-left:0;font-size:36px}body.m .cmp-flood{display:none}
+/* global slide timeline */
+#prog{position:fixed;left:48px;right:48px;bottom:24px;height:14px;display:flex;gap:3px;align-items:flex-end;z-index:12}
+#prog button{all:unset;flex:1;height:14px;display:flex;align-items:flex-end;cursor:pointer;position:relative}
+#prog button::before{content:'';display:block;width:100%;height:3px;border-radius:2px;background:rgba(220,235,245,.13);transition:background .4s,height .3s}
+#prog button.done::before{background:rgba(159,216,236,.32)}
+#prog button.cur::before{background:var(--ice);height:5px;box-shadow:0 0 10px rgba(159,216,236,.7)}
+#prog button:hover::before{background:rgba(159,216,236,.8)}
+#prog button.chap::after{content:attr(data-ch);position:absolute;left:0;top:19px;font:400 11px 'IBM Plex Mono',monospace;color:rgba(200,222,235,.4);white-space:nowrap;pointer-events:none}
+body.m #prog{display:none}
 /* qr */
 .qrcard{position:absolute;left:120px;bottom:56px;padding:16px 22px 16px 16px;border-radius:20px;background:linear-gradient(160deg,rgba(220,235,245,.11),rgba(220,235,245,.03));border:1px solid rgba(220,235,245,.2);backdrop-filter:blur(18px);display:flex;gap:20px;align-items:center;z-index:3}
 .qrcard #qr{width:132px;height:132px;flex:none;background:#fff;border-radius:10px;padding:9px}
@@ -355,9 +393,9 @@ body.m #overview .grid{grid-template-columns:1fr}
   <div class="col left">
     <h2>Your turn: how would you warn them?</h2>
     <div class="stack">
-      <div class="glass"><b>Call everyone</b><span class="f">The mobile network is down, or was never there.</span></div>
-      <div class="glass"><b>Post on social media</b><span class="f">It’s 2 AM. Everyone’s asleep, and many have no data.</span></div>
-      <div class="glass"><b>Sound a siren</b><span class="f">Who presses the button, and how do they know the water is coming?</span></div>
+      <div class="glass ic tint-a"><b>Call everyone</b><svg class="gi" viewBox="0 0 48 48"><rect x="15" y="5" width="18" height="38" rx="4"/><path d="M22 37h4"/><path d="M5 5l38 38"/></svg><span class="f">The mobile network is down, or was never there.</span></div>
+      <div class="glass ic tint-b"><b>Post on social media</b><svg class="gi" viewBox="0 0 48 48"><path d="M8 10h32a3 3 0 013 3v17a3 3 0 01-3 3H24l-9 8v-8H8a3 3 0 01-3-3V13a3 3 0 013-3z"/><path d="M15 19h18M15 25h11"/></svg><span class="f">It’s 2 AM. Everyone’s asleep, and many have no data.</span></div>
+      <div class="glass ic tint-c"><b>Sound a siren</b><svg class="gi" viewBox="0 0 48 48"><path d="M12 40V26a12 12 0 0124 0v14"/><path d="M8 40h32"/><path d="M24 6v4M8 12l3 3M40 12l-3 3M4 26h4M40 26h4"/><path d="M19 26a5 5 0 015-5"/></svg><span class="f">Who presses the button, and how do they know the water is coming?</span></div>
     </div>
     <p class="lead snow f">Every answer needs the same thing first: someone, or something, that knows the water is rising.</p>
   </div>
@@ -445,13 +483,20 @@ body.m #overview .grid{grid-template-columns:1fr}
   <aside>Analogy: the satellite is the weather reporter on TV, a great overview but not your street. The sensor is your neighbour shouting “the water is at my door!” You need both.</aside>
 </section>
 
-<section class="sl" data-id="radar" data-title="Radar sees through clouds">
+<section class="sl radar" data-id="radar" data-title="Radar sees through clouds">
   <div class="col left narrow">
     <h2>Radar sees through monsoon clouds</h2>
     <p class="lead">Normal cameras are blind under monsoon clouds. Sentinel-1 uses radar instead.</p>
     <div class="glass"><b>Through cloud and rain, day or night</b><span>Ideal for mapping where a flood has spread. Watch the sweep fill in the flooded valley.</span></div>
     <div class="glass warm"><b>But it passes over every few days</b><span>Great for mapping the damage. Too slow to wake a village at 2 AM.</span></div>
     <p class="source">Source: European Space Agency, Sentinel-1 mission</p>
+  </div>
+  <div class="cmp">
+    <div class="cmp-row"><span class="cmp-l">Satellite</span><div class="cmp-bar"><i class="pass" style="left:9%"></i><i class="pass" style="left:81%"></i><em style="left:9%">Pass</em><em style="left:81%">Next pass</em></div></div>
+    <div class="cmp-row"><span class="cmp-l">Sensor</span><div class="cmp-bar dense"></div></div>
+    <div class="cmp-flood" style="left:calc(var(--lw) + 46%)"><b>Flood</b></div>
+    <div class="cmp-ax"><span>Day 1</span><span>Day 3</span><span>Day 5</span><span>Day 7</span></div>
+    <p class="cmp-cap">The satellite sees the flood days later. The sensor reports every minute.</p>
   </div>
   <aside>Fun fact: the data from Sentinel satellites is free, and copies of it are hosted openly on AWS. The point: satellites map, sensors warn.</aside>
 </section>
@@ -750,14 +795,14 @@ sns = boto3.client(<s>"sns"</s>)
   <aside>On the map: Mankal to Raniban is clear; Raniban to Dharmasthali dies at the ridge. Replace the orange item with your strongest real number. One real result beats ten diagrams.</aside>
 </section>
 
-<section class="sl" data-id="demo" data-title="Live demo">
+<section class="sl demo-s" data-id="demo" data-title="Live demo">
   <div class="topbar"><h2>Live demo: let’s send an alert</h2></div>
   <div class="steps4 three-up">
     <div class="glass"><span class="kick">On my desk</span><b class="disp">ESP32 publishes</b><p>I’ll fake a rising river by moving my hand towards the sensor.</p></div>
     <div class="glass"><span class="kick">In AWS</span><b class="disp">Rule and Lambda fire</b><p>Watch the MQTT test client in the AWS console.</p></div>
     <div class="glass warm"><span class="kick flare">In this room</span><b class="disp">A phone buzzes</b><p>Whoever’s number is subscribed gets the SMS.</p></div>
   </div>
-  <p class="lead foot">If the Wi-Fi fails, that’s also a lesson about networks.</p>
+  <div class="glass note"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.6 16a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19.4" r="1.1" fill="currentColor"/></svg><div><span class="kick">If the Wi-Fi fails</span><p>That is also a lesson about networks. The recorded backup plays instead.</p></div></div>
   <aside>Optional. If you do it, have a recorded video as backup. If you skip it, delete this slide.</aside>
 </section>
 
@@ -809,6 +854,7 @@ sns = boto3.client(<s>"sns"</s>)
 <div id="notes"><div class="nh"><span class="nn"></span><span class="nt">Timer starts on first key</span></div><div class="nb"></div><div class="ns"></div></div>
 <div id="overview"><div class="grid"></div></div>
 <div id="help">Next: Right, Space, click, clicker<br>Back: Left<br>N: speaker notes and timer<br>O: all slides<br>F: fullscreen<br>H: this help</div>
+<div id="prog" aria-hidden="true"><i class="pf"></i></div>
 <div id="mnav"><button id="mp" aria-label="Previous slide"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><div class="mc"><span id="mt"></span><div class="mbar"><i id="mb"></i></div></div><button id="mo" aria-label="All slides"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><button id="mn" aria-label="Next slide"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div>
 <div id="hint">H for help</div>
 <div id="loading">Building the valley</div>
