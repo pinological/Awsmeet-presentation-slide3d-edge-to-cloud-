@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Edge to Cloud: How a Tiny Sensor Can Save a Life</title>
+<style>
+@font-face{font-family:'Big Shoulders Display';font-weight:800;src:url(fonts/big-shoulders-display-latin-800-normal.woff2) format('woff2')}
+@font-face{font-family:'Big Shoulders Display';font-weight:600;src:url(fonts/big-shoulders-display-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'IBM Plex Sans';font-weight:300;src:url(fonts/ibm-plex-sans-latin-300-normal.woff2) format('woff2')}
+@font-face{font-family:'IBM Plex Sans';font-weight:400;src:url(fonts/ibm-plex-sans-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'IBM Plex Sans';font-weight:500;src:url(fonts/ibm-plex-sans-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'IBM Plex Mono';font-weight:400;src:url(fonts/ibm-plex-mono-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'IBM Plex Mono';font-weight:500;src:url(fonts/ibm-plex-mono-latin-500-normal.woff2) format('woff2')}
+:root{--ink:#05080f;--snow:#EEF2F4;--text:#B4BEC7;--mute:#7F8C98;--ice:#9FD8EC;--flare:#FF9900}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--ink);overflow:hidden;color:var(--text);font-family:'IBM Plex Sans',Arial,sans-serif;-webkit-font-smoothing:antialiased}
+#stage3d{position:fixed;inset:0;width:100vw;height:100vh;display:block}
+#vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 60% 50%,transparent 45%,rgba(3,5,10,.75) 100%)}
+#labels{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+.lbl{position:absolute;left:0;top:0;opacity:0;transition:opacity .8s;white-space:nowrap;font:500 clamp(11px,.82vw,17px)/1 'IBM Plex Mono',monospace;color:var(--snow)}
+.lbl.on{opacity:1}
+.lbl i{position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%;border:1.5px solid var(--ice)}
+.lbl span{position:absolute;left:14px;top:-26px;padding:6px 10px;background:rgba(5,8,15,.6);border-left:1px solid var(--ice);backdrop-filter:blur(6px)}
+#stage{position:fixed;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0}
+section.sl{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .7s ease,visibility 0s linear .7s}
+section.sl.on{opacity:1;visibility:visible;transition:opacity .9s ease .25s,visibility 0s}
+section.sl::before{content:'';position:absolute;inset:calc(var(--oy,0px)*-1) calc(var(--ox,0px)*-1);pointer-events:none;background:linear-gradient(90deg,rgba(5,8,15,.82) 0,rgba(5,8,15,.82) var(--ox,0px),rgba(5,8,15,.55) calc(var(--ox,0px) + 653px),rgba(5,8,15,0) calc(var(--ox,0px) + 1114px))}
+section.sl:has(.col.right)::before{background:linear-gradient(270deg,rgba(5,8,15,.82) 0,rgba(5,8,15,.82) var(--ox,0px),rgba(5,8,15,.55) calc(var(--ox,0px) + 653px),rgba(5,8,15,0) calc(var(--ox,0px) + 1114px))}
+section.sl:has(.col.center)::before,section.sl:has(.topbar)::before{background:radial-gradient(70% 70% at 50% 50%,rgba(5,8,15,.6),rgba(5,8,15,.2))}
+section.sl:has(.topbar)::before{background:linear-gradient(180deg,rgba(5,8,15,.75) 0,rgba(5,8,15,.75) var(--oy,0px),rgba(5,8,15,.1) calc(var(--oy,0px) + 432px),rgba(5,8,15,.1) calc(var(--oy,0px) + 594px),rgba(5,8,15,.85) calc(100% - var(--oy,0px)),rgba(5,8,15,.85) 100%)}
+.col{position:absolute;top:110px;bottom:110px;width:860px;display:flex;flex-direction:column;justify-content:center;gap:34px}
+.col.left{left:120px}.col.right{right:120px}.col.narrow{width:780px}
+.col.center{left:200px;right:200px;width:auto;align-items:center;text-align:center;gap:18px}
+.col.bottom{justify-content:flex-end}
+.col.chap{gap:24px}
+p{margin:0}
+section.sl aside{display:none}
+h2.huge{font-size:108px}
+.col.right h2.huge{font-size:96px}
+h1,h2,.disp{font-family:'Big Shoulders Display','Arial Narrow',sans-serif;font-weight:800;color:var(--snow);line-height:.92;margin:0;letter-spacing:-.5px}
+h1{font-size:210px;letter-spacing:-2px}
+h2{font-size:84px}
+h2.huge{font-size:118px}
+.disp.mega{font-size:260px;line-height:.85}
+.disp.big{font-size:92px}
+.disp.mid{font-size:72px}
+.lead{font-size:36px;font-weight:300;line-height:1.3;color:#CBD3DA}
+.body{font-size:27px;line-height:1.45}
+.small{font-size:22px;line-height:1.45;color:var(--mute)}
+.source{font-size:17px;color:#5f6c78;font-family:'IBM Plex Mono',monospace}
+.snow{color:var(--snow)}.flare{color:var(--flare)}.dimtxt{color:#9FD8EC}.mono{font-family:'IBM Plex Mono',monospace}.strong{font-weight:500;color:var(--snow)}
+.kick{font-family:'IBM Plex Mono',monospace;font-size:21px;color:var(--ice);letter-spacing:.2px}
+.row{display:flex}.gap32{gap:32px}.gap48{gap:48px}.aic{align-items:center}.flex1{flex:1}
+.glass{background:linear-gradient(160deg,rgba(220,235,245,.11),rgba(220,235,245,.025));border:1px solid rgba(220,235,245,.16);border-radius:26px;padding:30px 34px;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 30px 80px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:8px}
+.glass.tight{padding:22px 26px;font-size:20px;line-height:1.4}
+.glass.warm{background:linear-gradient(160deg,rgba(255,153,0,.17),rgba(255,153,0,.035));border-color:rgba(255,153,0,.42)}
+.glass b{font-size:28px;font-weight:500;color:var(--snow)}
+.glass span{font-size:24px;line-height:1.4}
+.glass .disp{font-weight:800}
+.rule{border-top:1px solid rgba(220,235,245,.22);padding-top:20px;display:flex;flex-direction:column;gap:8px}
+.rule.warm{border-top-color:rgba(255,153,0,.65)}
+.rule b{font-size:28px;font-weight:500;color:var(--snow)}
+.rule span{font-size:22px;line-height:1.4}
+.f{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
+.f.vis{opacity:1;transform:none}
+/* cover */
+.logo{position:absolute;right:110px;top:90px;width:330px;opacity:.95}
+.cover .sub{color:var(--ice);font-size:24px}
+.byline{display:flex;gap:34px;font-size:22px;color:var(--mute);margin-top:18px;border-top:1px solid rgba(220,235,245,.2);padding-top:24px;flex-wrap:wrap}
+/* about */
+.portrait{width:250px;height:250px;object-fit:cover;border-radius:50%;border:1px solid rgba(220,235,245,.3);filter:saturate(.9)}
+.name{font-size:150px}
+.tl{position:absolute;left:100px;bottom:34px;width:1000px;display:grid;grid-template-columns:repeat(4,1fr);border-top:2px solid rgba(159,216,236,.4)}
+.tl div{position:relative;padding:26px 16px 0 0;display:flex;flex-direction:column;gap:6px}
+.tl i{position:absolute;top:-9px;left:0;width:14px;height:14px;border-radius:50%;background:var(--ink);border:2px solid var(--ice)}
+.tl .now i{background:var(--flare);border-color:var(--flare)}
+.tl b{font-weight:500;font-size:24px;color:var(--ice)}
+.tl span{font-size:19px;line-height:1.35;color:var(--snow);opacity:.8}
+.facts{display:flex;flex-direction:column;gap:0;border-top:1px solid rgba(220,235,245,.18)}
+.facts div{display:grid;grid-template-columns:230px 1fr;gap:20px;padding:16px 0;border-bottom:1px solid rgba(220,235,245,.12)}
+.facts span{font-family:'IBM Plex Mono',monospace;font-size:19px;color:var(--ice);padding-top:5px}
+.facts b{font-weight:400;font-size:27px;color:var(--snow);line-height:1.35}
+.small-facts div{grid-template-columns:170px 1fr;padding:11px 0}.small-facts b{font-size:22px}.small-facts span{font-size:16px}
+/* phone */
+.phone{position:absolute;top:150px;width:470px;height:800px;border-radius:64px;padding:38px 34px;background:linear-gradient(170deg,rgba(30,40,54,.72),rgba(8,12,20,.9));border:1px solid rgba(220,235,245,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 60px 120px rgba(0,0,0,.6);backdrop-filter:blur(14px);display:flex;flex-direction:column;gap:18px}
+.left-phone{left:170px}
+.ph-top{display:flex;justify-content:space-between;font:400 19px 'IBM Plex Mono',monospace;color:var(--mute)}
+.ph-time{font-family:'Big Shoulders Display';font-weight:600;font-size:150px;color:var(--snow);text-align:center;margin-top:40px;line-height:1}
+.ph-sub{text-align:center;font-size:21px;color:var(--mute)}
+.ph-card{margin-top:40px;border-radius:26px;padding:26px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:10px;font-size:22px}
+.ph-card.muted{color:var(--mute);text-align:center}
+.alert .ph-card{background:rgba(255,153,0,.16);border-color:rgba(255,153,0,.55);animation:buzz 2.4s ease-in-out 1.2s infinite}
+.ph-card b{color:var(--snow);font-weight:500;font-size:25px;line-height:1.35}
+.ph-app{font:500 17px 'IBM Plex Mono',monospace;color:var(--flare)}
+.ph-foot{margin-top:auto;text-align:center;font:400 20px 'IBM Plex Mono',monospace;color:var(--mute)}
+@keyframes buzz{0%,88%,100%{transform:none}90%{transform:translateX(-5px)}92%{transform:translateX(5px)}94%{transform:translateX(-4px)}96%{transform:translateX(3px)}}
+/* stats + stacks */
+.stats{display:flex;gap:22px}.stats .glass{flex:1}.stats span{font-size:21px}
+.stack{display:flex;flex-direction:column;gap:18px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}.grid2 .glass{padding:24px 28px}.grid2 b{font-size:25px}.grid2 span{font-size:21px}
+.eq{font-size:62px;display:flex;gap:22px;align-items:baseline}.eq i{font-style:normal;color:#56626e}
+.route{list-style:none;margin:0;padding:0 0 0 34px;border-left:2px solid rgba(159,216,236,.45);display:flex;flex-direction:column;gap:26px}
+.route li{position:relative;display:grid;grid-template-columns:170px 1fr;column-gap:20px}
+.route li::before{content:'';position:absolute;left:-44px;top:8px;width:16px;height:16px;border-radius:50%;background:var(--ink);border:2px solid var(--ice)}
+.route li.summit::before{border-color:var(--flare);background:var(--flare)}
+.route span{font:400 20px 'IBM Plex Mono',monospace;color:var(--ice);padding-top:6px;grid-row:span 2}
+.route b{font-size:34px;font-weight:500;color:var(--snow)}
+.route em{font-style:normal;font-size:23px;color:var(--mute)}
+.route .summit span{color:var(--flare)}
+.plist{display:flex;flex-direction:column;border-top:1px solid rgba(220,235,245,.15)}
+.plist div{display:grid;grid-template-columns:230px 1fr;gap:18px;padding:13px 0;border-bottom:1px solid rgba(220,235,245,.1);align-items:baseline}
+.plist b{font-size:25px;font-weight:500;color:var(--snow)}.plist span{font-size:21px;line-height:1.35}
+.plist .hot b{color:var(--flare)}
+.timeline{display:flex;flex-direction:column;gap:16px}
+.timeline div{display:grid;grid-template-columns:130px 1fr;column-gap:22px}
+.timeline .disp{font-size:52px;grid-row:span 2;color:var(--ice)}
+.timeline strong{font-weight:500;color:var(--snow);font-size:26px}
+.timeline span{font-size:21px;color:var(--mute)}
+ul.clean{margin:6px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;font-size:26px;color:var(--snow)}
+ul.clean li::before{content:'';display:inline-block;width:18px;height:2px;background:var(--flare);vertical-align:middle;margin-right:16px}
+/* top-bar layouts */
+.topbar{position:absolute;left:120px;right:120px;top:100px}
+.steps4{position:absolute;left:120px;right:120px;bottom:110px;display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
+.steps4.three-up{grid-template-columns:repeat(3,1fr)}
+.steps4 .glass{gap:12px}.steps4 .disp{font-size:66px}.steps4 p{font-size:22px;line-height:1.4}
+.foot{position:absolute;left:120px;right:120px;bottom:40px;text-align:center;font-size:26px}
+.parts{display:flex;flex-direction:column;gap:14px}
+.parts div{display:grid;grid-template-columns:120px 1fr;gap:20px;padding:20px 26px;border-radius:20px;background:rgba(220,235,245,.06);border:1px solid rgba(220,235,245,.12);backdrop-filter:blur(12px)}
+.parts span{font:400 20px 'IBM Plex Mono',monospace;color:var(--ice);padding-top:4px}
+.parts b{font-weight:400;font-size:27px;color:var(--snow);line-height:1.3}
+.parts .hot{border-color:rgba(255,153,0,.5);background:rgba(255,153,0,.1)}.parts .hot span{color:var(--flare)}
+.chirp{width:100%;height:46px;margin-top:6px}
+.flow{display:flex;flex-direction:column;gap:12px}
+.flow div{padding:18px 24px;border-radius:18px;border:1px solid rgba(220,235,245,.13);background:rgba(220,235,245,.05);display:flex;flex-direction:column;gap:4px;backdrop-filter:blur(12px)}
+.flow b{font-weight:500;color:var(--snow);font-size:24px}.flow em{font-style:normal;font-size:20px}
+.flow .hot{border-color:rgba(255,153,0,.5);background:rgba(255,153,0,.1)}
+code{font:400 20px 'IBM Plex Mono',monospace;color:var(--ice)}
+.code pre{margin:0;font:400 25px/1.5 'IBM Plex Mono',monospace;color:#C9D2D9;white-space:pre}
+.code k{color:var(--ice)}.code o{color:var(--flare);font-weight:500}.code s{color:#A9C98F;text-decoration:none}
+.metro{position:absolute;left:120px;right:120px;top:260px;display:flex;flex-direction:column;gap:70px}
+.metro ol{list-style:none;margin:26px 0 0;padding:0;display:flex;justify-content:space-between;position:relative}
+.metro ol::before{content:'';position:absolute;left:12px;right:12px;top:11px;height:4px;background:var(--ice);border-radius:2px}
+.metro .warm ol::before{background:var(--flare)}
+.metro li{position:relative;display:flex;flex-direction:column;gap:6px;padding-top:44px;width:200px}
+.metro li::before{content:'';position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:var(--ink);border:4px solid var(--ice)}
+.metro .warm li::before{border-color:var(--flare)}
+.metro li.x::before{width:34px;height:34px;left:-4px;top:-4px;background:var(--snow);border-color:var(--snow)}
+.metro b{font-size:30px;font-weight:500;color:var(--snow)}.metro span{font-size:20px;color:var(--mute)}
+.metro .line .kick{font-size:23px}
+.uses{display:flex;flex-direction:column;gap:14px}
+.uses div{display:grid;grid-template-columns:200px 1fr;column-gap:20px;row-gap:2px;padding:18px 24px;border-radius:18px;background:rgba(220,235,245,.06);border:1px solid rgba(220,235,245,.12);backdrop-filter:blur(12px)}
+.uses b{grid-row:span 2;font-size:27px;font-weight:500;color:var(--snow)}.uses span{font-size:20px;color:var(--ice);font-family:'IBM Plex Mono',monospace}.uses em{font-style:normal;font-size:22px}
+.photo{border-radius:22px;border:1px solid rgba(220,235,245,.2);object-fit:cover;box-shadow:0 40px 90px rgba(0,0,0,.55)}
+.photo.tall{width:300px;height:420px}
+.photo.side{position:absolute;left:150px;top:120px;width:620px;height:840px}
+.bleed{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.85) brightness(.82)}
+.full::before{background:linear-gradient(0deg,rgba(5,8,15,.92),rgba(5,8,15,.1) 55%)!important;z-index:1}
+.full .col{z-index:2}
+.three{position:absolute;left:120px;right:120px;top:230px;bottom:80px;display:grid;grid-template-columns:repeat(3,1fr);gap:30px}
+.three figure{margin:0;display:flex;flex-direction:column;gap:20px}
+.three img{width:100%;flex:1 1 0;height:0;min-height:0;object-fit:cover;border-radius:22px;border:1px solid rgba(220,235,245,.2)}
+.three figcaption{display:flex;flex-direction:column;gap:6px}.three b{font-size:30px;font-weight:500;color:var(--snow)}.three span{font-size:22px;line-height:1.4}
+.weeks span{color:var(--ice)}
+.clock{display:flex;flex-direction:column;gap:0;border-left:2px solid rgba(159,216,236,.4);margin-left:8px}
+.clock div{display:grid;grid-template-columns:200px 1fr;column-gap:22px;padding:14px 0 14px 28px;position:relative}
+.clock div::before{content:'';position:absolute;left:-9px;top:22px;width:14px;height:14px;border-radius:50%;background:var(--ink);border:2px solid var(--ice)}
+.clock .hot::before{background:var(--flare);border-color:var(--flare)}
+.clock b{grid-row:span 2;font-size:24px;color:var(--ice);padding-top:3px;font-weight:500}
+.clock strong{font-weight:500;font-size:28px;color:var(--snow)}.clock span{font-size:22px;line-height:1.4}
+/* chrome */
+#notes{position:fixed;left:24px;bottom:24px;width:min(640px,46vw);max-height:46vh;overflow:auto;padding:22px 26px;border-radius:18px;background:rgba(5,8,15,.9);border:1px solid rgba(220,235,245,.2);backdrop-filter:blur(10px);font-size:17px;line-height:1.5;color:#d6dde3;display:none;z-index:10}
+#notes.open{display:block}
+#notes .nh{display:flex;justify-content:space-between;font:400 13px 'IBM Plex Mono',monospace;color:var(--ice);margin-bottom:12px;gap:16px}
+#notes .ns{font:400 13px 'IBM Plex Mono',monospace;color:var(--flare);margin-top:10px}
+#overview{position:fixed;inset:0;background:rgba(5,8,15,.94);display:none;z-index:20;padding:60px;overflow:auto}
+#overview.open{display:block}
+#overview .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+#overview button{all:unset;cursor:pointer;padding:16px 18px;border-radius:12px;border:1px solid rgba(220,235,245,.16);background:rgba(220,235,245,.04);display:flex;gap:14px;align-items:baseline;color:var(--snow);font-size:16px}
+#overview button:hover,#overview button:focus-visible{border-color:var(--ice);background:rgba(159,216,236,.1)}
+#overview b{font:500 13px 'IBM Plex Mono',monospace;color:var(--ice)}
+#help{position:fixed;right:24px;bottom:24px;padding:18px 22px;border-radius:14px;background:rgba(5,8,15,.92);border:1px solid rgba(220,235,245,.2);font:400 14px/1.8 'IBM Plex Mono',monospace;color:#c9d2d9;display:none;z-index:10}
+#help.open{display:block}
+#hint{position:fixed;right:22px;bottom:18px;font:400 12px 'IBM Plex Mono',monospace;color:#3f4a55;pointer-events:none}
+#loading{position:fixed;inset:0;background:var(--ink);display:flex;align-items:center;justify-content:center;z-index:30;transition:opacity .9s;font:400 14px 'IBM Plex Mono',monospace;color:var(--ice)}
+#loading.done{opacity:0;pointer-events:none}
+
+/* qr */
+.qrcard{position:absolute;left:120px;bottom:56px;padding:16px 22px 16px 16px;border-radius:20px;background:linear-gradient(160deg,rgba(220,235,245,.11),rgba(220,235,245,.03));border:1px solid rgba(220,235,245,.2);backdrop-filter:blur(18px);display:flex;gap:20px;align-items:center;z-index:3}
+.qrcard #qr{width:132px;height:132px;flex:none;background:#fff;border-radius:10px;padding:9px}
+.qrcard #qr svg{width:100%;height:100%;display:block}
+.qrcard .qt{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.qrcard p{font-size:24px;color:var(--snow);font-weight:500}
+.qrcard span{font:400 15px 'IBM Plex Mono',monospace;color:var(--mute);max-width:300px;word-break:break-all;line-height:1.3}
+.qrcard button{all:unset;cursor:pointer;margin-top:2px;padding:9px 18px;border-radius:999px;border:1px solid rgba(159,216,236,.5);color:var(--ice);font:500 17px 'IBM Plex Sans',sans-serif}
+.qrcard button:hover,.qrcard button:focus-visible{background:rgba(159,216,236,.15)}
+.qna .col.bottom{bottom:270px}
+@keyframes mIn{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+body.m section.sl.on{animation:mIn .3s ease-out}
+/* ---------- phone mode: 1080 wide logical stage, one scrolling column per slide ---------- */
+#mnav{display:none}
+body.m #hint,body.m #vignette{display:none}
+body.m #stage{width:1080px}
+body.m section.sl{overflow-y:auto;overflow-x:hidden;padding:130px 64px 230px;display:flex;flex-direction:column;gap:44px;justify-content:safe center;-webkit-overflow-scrolling:touch}
+body.m section.sl::before,body.m section.sl:has(.col.right)::before,body.m section.sl:has(.col.center)::before,body.m section.sl:has(.topbar)::before{background:linear-gradient(180deg,rgba(5,8,15,0),rgba(5,8,15,0));position:fixed}
+body.m section.sl > *{position:static!important;width:auto!important;max-width:100%;inset:auto!important;margin:0!important;transform:none;flex:none;z-index:1}
+body.m section.sl .col,body.m .topbar,body.m .steps4,body.m .three,body.m .metro,body.m .tl,body.m .foot{display:flex;flex-direction:column;gap:34px;justify-content:flex-start;align-items:stretch;text-align:left}
+body.m .col.center{text-align:center;align-items:center}
+body.m .f{opacity:1!important;transform:none!important}
+body.m h1{font-size:230px}
+body.m h2{font-size:104px}
+body.m h2.huge,body.m .col.right h2.huge{font-size:120px}
+body.m .disp.mega{font-size:300px}
+body.m .disp.big{font-size:130px}
+body.m .disp.mid{font-size:100px}
+body.m .name{font-size:170px}
+body.m .lead{font-size:50px}
+body.m .body{font-size:42px}
+body.m .small{font-size:36px}
+body.m .kick{font-size:34px}
+body.m .source{font-size:28px}
+body.m .glass{padding:40px 44px;border-radius:36px}
+body.m .glass b,body.m .rule b{font-size:44px}
+body.m .glass span,body.m .rule span,body.m .glass.tight{font-size:36px}
+body.m .glass.tight{padding:34px 40px}
+body.m .row{flex-direction:column;align-items:flex-start;gap:30px}
+body.m .row.aic{flex-direction:row;align-items:center;gap:36px}
+body.m .portrait{width:240px;height:240px}
+body.m .facts div,body.m .small-facts div{grid-template-columns:1fr;gap:6px}
+body.m .facts span,body.m .small-facts span{font-size:30px}
+body.m .facts b,body.m .small-facts b{font-size:42px}
+body.m .tl{display:grid!important;grid-template-columns:1fr 1fr;gap:34px 20px;border-top:0;border-left:2px solid rgba(159,216,236,.4);padding-left:34px}
+body.m .tl div{padding:0}
+body.m .tl i{left:-43px;top:6px}
+body.m .tl b{font-size:38px}body.m .tl span{font-size:30px}
+body.m .qrcard{padding:26px 30px;gap:30px}body.m .qrcard #qr{width:220px;height:220px}body.m .qrcard p{font-size:42px}body.m .qrcard span{display:block;font-size:26px;max-width:none}body.m .qrcard button{font-size:34px;padding:16px 34px}body.m .qna .col.bottom{bottom:auto}
+body.m .logo{width:360px;align-self:flex-start}
+body.m .byline{font-size:34px;gap:20px 30px}
+body.m .stats{flex-direction:column}
+body.m .grid2{grid-template-columns:1fr}
+body.m .eq{font-size:80px;flex-wrap:wrap}
+body.m .route{gap:34px}
+body.m .route li,body.m .plist div,body.m .parts div,body.m .uses div,body.m .clock div,body.m .timeline div{grid-template-columns:1fr}
+body.m .route span,body.m .clock b{grid-row:auto}
+body.m .route b{font-size:50px}body.m .route em{font-size:36px}body.m .route span{font-size:32px}
+body.m .plist b{font-size:40px}body.m .plist span{font-size:34px}
+body.m .timeline .disp{font-size:80px;grid-row:auto}body.m .timeline strong{font-size:40px}body.m .timeline span{font-size:32px}
+body.m ul.clean{font-size:40px}
+body.m .steps4,body.m .steps4.three-up{display:flex}
+body.m .steps4 .disp{font-size:96px}body.m .steps4 p{font-size:34px}
+body.m .parts b,body.m .uses em{font-size:38px}body.m .parts span,body.m .uses span{font-size:30px}body.m .uses b{font-size:42px}
+body.m .flow b{font-size:38px}body.m .flow em{font-size:32px}
+body.m code{font-size:30px}
+body.m .code pre{font-size:32px;white-space:pre-wrap;word-break:break-word}
+body.m .metro ol{flex-direction:column;gap:46px;margin-top:34px}
+body.m .metro ol::before{left:12px;right:auto;top:12px;bottom:12px;width:4px;height:auto}
+body.m .metro li{width:auto;padding:0 0 0 64px}
+body.m .metro li::before{top:2px}
+body.m .metro b{font-size:44px}body.m .metro span{font-size:32px}body.m .metro .line .kick{font-size:34px}
+body.m .photo,body.m .photo.tall,body.m .photo.side{width:100%!important;height:560px!important}
+body.m .three{display:flex}
+body.m .three img{width:100%;height:520px;flex:none}
+body.m .three b{font-size:42px}body.m .three span{font-size:34px}
+body.m .bleed{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;z-index:0}
+body.m .clock strong{font-size:40px}body.m .clock span{font-size:34px}body.m .clock b{font-size:34px}
+body.m .phone{width:100%!important;height:auto!important;min-height:720px;padding:50px 44px}
+body.m .ph-top{font-size:28px}body.m .ph-time{font-size:220px;margin-top:20px}body.m .ph-sub{font-size:32px}body.m .ph-card{font-size:34px;margin-top:20px}body.m .ph-card b{font-size:38px}body.m .ph-foot{font-size:30px;margin-top:30px}body.m .ph-app{font-size:26px}
+body.m .foot{font-size:38px;text-align:left}
+body.m .chirp{height:70px}
+body.m .col.chap{padding-top:120px}
+body.m #labels,body.m #stage3d{display:none}
+body.m{background:radial-gradient(120% 60% at 50% 0%,#0d1a28 0%,#05080f 70%)}
+body.m #mnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:15;align-items:center;justify-content:space-between;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(0deg,rgba(5,8,15,.96),rgba(5,8,15,.7));gap:12px}
+#mnav button{all:unset;cursor:pointer;width:58px;height:58px;border-radius:50%;border:1px solid rgba(220,235,245,.28);background:rgba(220,235,245,.08);display:flex;align-items:center;justify-content:center;color:var(--snow)}
+#mnav button:active{background:rgba(159,216,236,.25)}
+#mnav svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+#mnav .mc{flex:1;text-align:center;font:500 14px 'IBM Plex Mono',monospace;color:var(--ice)}
+#mnav .mbar{height:3px;background:rgba(220,235,245,.15);border-radius:2px;margin-top:8px;overflow:hidden}
+#mnav .mbar i{display:block;height:100%;background:var(--ice);width:0;transition:width .4s}
+body.m #overview{padding:24px 16px 90px}
+body.m #overview .grid{grid-template-columns:1fr}
+@media (prefers-reduced-motion: reduce){.f,section.sl{transition:none!important}.alert .ph-card{animation:none}}
+</style>
+</head>
+<body>
+<canvas id="stage3d"></canvas>
+<div id="vignette"></div>
+<div id="labels"></div>
+<div id="stage">
+<section class="sl cover" data-id="cover" data-title="Edge to Cloud">
+  <img class="logo" src="img/scd-logo-white.png" alt="AWS Student Community Day Kathmandu 2026">
+  <div class="col left bottom">
+    <h1>Edge to<br>Cloud</h1>
+    <p class="lead snow">How a tiny sensor can save a life</p>
+    <p class="mono small sub">LoRaWAN, MQTT and AWS IoT for disaster early warning in Nepal</p>
+    <div class="byline"><span class="strong">Peter Karki</span><span>Senior Interactive Developer</span><span>LBEF Campus, Maitidevi. Kathmandu, 28 November 2026</span></div>
+  </div>
+  <aside>Namaste everyone. I’m Peter. For the next 30 minutes: how a sensor that costs less than a meal can help warn a whole village before a disaster. No IoT experience needed.</aside>
+</section>
+
+<section class="sl" data-id="about" data-title="Who am I">
+  <div class="col left">
+    <p class="kick">Your guide on this trek</p>
+    <div class="row gap48 aic">
+      <img class="portrait" src="img/headshot.jpg" alt="Peter Karki">
+      <h2 class="name">Peter<br>Karki</h2>
+    </div>
+    <div class="facts">
+      <div><span>Role</span><b>Senior Interactive Developer</b></div>
+      <div><span>Experience</span><b>5 years in development</b></div>
+      <div><span>Studying</span><b>Master’s in Data Science</b></div>
+      <div><span>How IoT started</span><b>Tinkering with hardware for my social media content, and I never stopped</b></div>
+    </div>
+  </div>
+  <div class="tl">
+    <div><i></i><b>Development</b><span>5 years building interactive things</span></div>
+    <div><i></i><b>Hardware</b><span>Tinkering for social media content</span></div>
+    <div><i></i><b>IoT and LoRa</b><span>Radios, sensors, real hills</span></div>
+    <div class="now"><i></i><b>Today</b><span>This talk</span></div>
+  </div>
+  <aside>Under a minute. The honest version: I started building gadgets for videos, and somehow ended up carrying radios up hills.</aside>
+</section>
+
+<section class="sl" data-id="hook" data-title="The river is rising">
+  <div class="col right">
+    <h2 class="huge">The river is rising.</h2>
+    <h2 class="huge dimtxt">The village has no signal.</h2>
+    <h2 class="huge flare">Who warns them?</h2>
+  </div>
+  <div class="phone left-phone">
+    <div class="ph-top"><span>No service</span><span>23%</span></div>
+    <div class="ph-time">02:00</div>
+    <div class="ph-sub">Monsoon night, upstream village</div>
+    <div class="ph-card muted"><span class="mono">Searching for network…</span></div>
+    <div class="ph-foot">0 warnings received</div>
+  </div>
+  <aside>Pause. Let the slide sit for three seconds. Then: “Keep this phone in mind. We’ll come back to it at the end.”</aside>
+</section>
+
+<section class="sl" data-id="sept-2024" data-title="September 2024">
+  <div class="col left">
+    <p class="lead">This isn’t hypothetical. 27–28 September 2024, Kathmandu Valley.</p>
+    <div class="stats">
+      <div class="glass"><b class="disp big">240 mm</b><span>of rain in 24 hours in the valley</span></div>
+      <div class="glass warm"><b class="disp big flare">236</b><span>lives lost across Nepal by early October</span></div>
+      <div class="glass"><b class="disp big">2 m</b><span>Bagmati above its danger level</span></div>
+    </div>
+    <p class="body">Forecasters saw the rain coming. The warnings didn’t say clearly what it meant for each street and each river bank.</p>
+    <p class="source">Sources: Kathmandu Post via AFP; Copernicus Global Flood Monitoring; The Guardian via ACAPS; Imperial College London rapid study</p>
+  </div>
+  <aside>Ask: who here was in Kathmandu that weekend? Most hands go up. The heavy rain was forecast. The gap was turning a forecast into a specific, local, timely warning. That gap is what sensors and the cloud can close.</aside>
+</section>
+
+<section class="sl" data-id="your-turn" data-title="Your turn">
+  <div class="col left">
+    <h2>Your turn: how would you warn them?</h2>
+    <div class="stack">
+      <div class="glass"><b>Call everyone</b><span class="f">The mobile network is down, or was never there.</span></div>
+      <div class="glass"><b>Post on social media</b><span class="f">It’s 2 AM. Everyone’s asleep, and many have no data.</span></div>
+      <div class="glass"><b>Sound a siren</b><span class="f">Who presses the button, and how do they know the water is coming?</span></div>
+    </div>
+    <p class="lead snow f">Every answer needs the same thing first: someone, or something, that knows the water is rising.</p>
+  </div>
+  <aside>Ask the room before clicking. Take two or three answers. Then click to reveal why each one fails on its own. Last click: the punchline. That “something” is a sensor.</aside>
+</section>
+
+<section class="sl" data-id="agenda" data-title="The route">
+  <div class="col left">
+    <h2>The route for the next 30 minutes</h2>
+    <ol class="route">
+      <li><span>Waypoint 1</span><b>The toolbox</b><em>What can sensors and satellites see?</em></li>
+      <li><span>Waypoint 2</span><b>Why the hills are hard</b><em>Why warnings arrive late</em></li>
+      <li><span>Waypoint 3</span><b>Follow one reading</b><em>From riverbank to phone</em></li>
+      <li><span>Waypoint 4</span><b>The hills fight back</b><em>My field research</em></li>
+      <li class="summit"><span>Summit</span><b>Your turn, then questions</b></li>
+    </ol>
+  </div>
+  <aside>Think of this talk as a trek. Four waypoints, then your turn and your questions at the summit.</aside>
+</section>
+
+<section class="sl chapter" data-id="ch1" data-title="Waypoint 1: The toolbox">
+  <div class="col right chap">
+    <p class="kick">Waypoint 1 of 4</p>
+    <h2 class="huge">The toolbox</h2>
+    <p class="lead">What can a tiny sensor, and a satellite, actually see?</p>
+  </div>
+  <aside>Chapter card. Read the question out loud, pause, then move on. It tells the room where the story is going next.</aside>
+</section>
+
+<section class="sl" data-id="what-iot" data-title="What is IoT?">
+  <div class="col left">
+    <h2>What is IoT?</h2>
+    <p class="lead">The Internet of Things: ordinary objects that sense the world and report it over a network.</p>
+    <p class="eq disp"><span>Thing</span><i>+</i><span>sensor</span><i>+</i><span>network</span><i>=</i><span class="flare">IoT</span></p>
+    <div class="grid2">
+      <div class="glass"><b>Smartwatch</b><span>Counts your steps</span></div>
+      <div class="glass"><b>Water tank sensor</b><span>Tells you it’s empty</span></div>
+      <div class="glass"><b>Smart meter</b><span>Reports electricity use</span></div>
+      <div class="glass warm"><b>Rain gauge on a hill</b><span>Measures rain every minute</span></div>
+    </div>
+  </div>
+  <aside>Ask: who has a smartwatch on right now? Hands up. You’re already wearing IoT.</aside>
+</section>
+
+<section class="sl" data-id="iot-count" data-title="18.5 billion">
+  <div class="col left">
+    <b class="disp mega">18.5</b>
+    <p class="lead snow">billion connected IoT devices in 2024</p>
+    <div class="row gap48">
+      <div class="rule f"><b class="disp mid">21.1 billion</b><span class="body">expected by the end of 2025</span></div>
+      <div class="rule warm f"><b class="disp mid flare">39 billion</b><span class="body">expected by 2030</span></div>
+    </div>
+    <p class="body">That’s already more than two for every person on Earth. Laptops and phones aren’t even counted.</p>
+    <p class="source">Source: IoT Analytics, State of IoT 2025</p>
+  </div>
+  <aside>Phones, laptops and tablets are excluded from this count. These are sensors, trackers, meters and machines. Click twice: the map fills with more devices each time.</aside>
+</section>
+
+<section class="sl" data-id="protocols" data-title="Protocol family">
+  <div class="col left narrow">
+    <h2>The IoT protocol family, by distance</h2>
+    <p class="body">Each ring on the map is how far one radio reaches from the same sensor.</p>
+    <div class="plist">
+      <div><b>Bluetooth LE</b><span>About a room. Phones, earbuds, wearables.</span></div>
+      <div><b>Zigbee and Thread</b><span>A home, hopping device to device. Smart bulbs, door sensors.</span></div>
+      <div><b>Wi-Fi</b><span>A building. Cameras, smart plugs.</span></div>
+      <div><b>Cellular IoT</b><span>Kilometres, through cell towers. NB-IoT and LTE-M: meters, trackers.</span></div>
+      <div class="hot"><b>LoRaWAN</b><span>Kilometres, no towers needed. Rivers, farms, hillsides.</span></div>
+    </div>
+    <div class="row gap32">
+      <div class="glass tight"><b>Matter</b><span>Not a radio. A common language so smart home devices from any brand work together, over Wi-Fi and Thread.</span></div>
+      <div class="glass tight"><b>MQTT</b><span>Not a radio either. The messaging rules that carry sensor data to the cloud. More on this soon.</span></div>
+    </div>
+  </div>
+  <aside>Walk from the smallest ring outwards: the further out, the further the signal goes. Most of you already use the inner rings every day. Today we live on the outer orange ring, LoRaWAN, because hills have no towers.</aside>
+</section>
+
+<section class="sl" data-id="remote-sensing" data-title="Eyes in the sky">
+  <div class="col left narrow">
+    <h2>Eyes in the sky, ears on the ground</h2>
+    <div class="glass"><p class="kick">From orbit</p><p class="body">Remote sensing: satellites and drones measuring Earth from far away. They see a whole region at once: rainfall, flood extent, landslide scars, glacial lakes.</p><p class="small">But a satellite only passes over every few days.</p></div>
+    <div class="glass"><p class="kick">From the ground</p><p class="body">IoT sensors sit in one exact spot on a riverbank or a slope. They report water level, soil moisture and tilt every minute.</p><p class="small">But each one covers only a small area.</p></div>
+    <p class="lead snow">Together you get the big picture and the ground truth.</p>
+  </div>
+  <aside>Analogy: the satellite is the weather reporter on TV, a great overview but not your street. The sensor is your neighbour shouting “the water is at my door!” You need both.</aside>
+</section>
+
+<section class="sl" data-id="radar" data-title="Radar sees through clouds">
+  <div class="col left narrow">
+    <h2>Radar sees through monsoon clouds</h2>
+    <p class="lead">Normal cameras are blind under monsoon clouds. Sentinel-1 uses radar instead.</p>
+    <div class="glass"><b>Through cloud and rain, day or night</b><span>Ideal for mapping where a flood has spread. Watch the sweep fill in the flooded valley.</span></div>
+    <div class="glass warm"><b>But it passes over every few days</b><span>Great for mapping the damage. Too slow to wake a village at 2 AM.</span></div>
+    <p class="source">Source: European Space Agency, Sentinel-1 mission</p>
+  </div>
+  <aside>Fun fact: the data from Sentinel satellites is free, and copies of it are hosted openly on AWS. The point: satellites map, sensors warn.</aside>
+</section>
+
+<section class="sl chapter" data-id="ch2" data-title="Waypoint 2: Why the hills are hard">
+  <div class="col left chap">
+    <p class="kick">Waypoint 2 of 4</p>
+    <h2 class="huge">Why the hills are hard</h2>
+    <p class="lead">If we can sense the danger, why does the warning still arrive late?</p>
+  </div>
+  <aside>Chapter card. Read the question out loud, pause, then move on. It tells the room where the story is going next.</aside>
+</section>
+
+<section class="sl" data-id="disasters" data-title="Floods, landslides, outbursts">
+  <div class="col left">
+    <h2 class="huge">Floods.<br>Landslides.<br>Glacial lake outbursts.</h2>
+    <p class="lead">Every monsoon. Often at night. Often far from any phone signal.</p>
+    <div class="glass warm"><p class="kick flare">Why warnings arrive late</p>
+      <ul class="clean"><li>Remote valleys have no mobile signal</li><li>Mountains block radio waves</li><li>News travels slower than water</li></ul></div>
+  </div>
+  <aside>Side joke: in AWS, “disaster recovery” means restoring servers. Today we’re saving people.</aside>
+</section>
+
+<section class="sl" data-id="tsho-rolpa" data-title="Tsho Rolpa">
+  <div class="col left">
+    <p class="lead">Tsho Rolpa, Dolakha. One of Nepal’s biggest glacial lakes, at 4,580 m.</p>
+    <div class="timeline">
+      <div><b class="disp">2000</b><strong>Lake lowered by 3 m</strong><span>Experts had recommended 20 m. The budget stopped at three.</span></div>
+      <div><b class="disp">2015</b><strong>Sensors installed</strong><span>A new system to text phones when the water rises.</span></div>
+      <div><b class="disp flare">2018</b><strong>Updates went quiet</strong><span>Weak internet, costly data and no mobile signal meant the readings stopped getting out.</span></div>
+    </div>
+    <h2 class="huge">The sensor worked.</h2>
+    <h2 class="huge flare f">The network didn’t.</h2>
+    <p class="source">Sources: Kathmandu Post (2015, 2018, 2026); Wikipedia</p>
+  </div>
+  <aside>This is the heart of the talk. On the map, the lake sensor keeps sending, and every signal dies before it gets out. Click to reveal the last line, then pause. The missing piece wasn’t the sensor. It was a way to get the reading out of the mountains cheaply and reliably.</aside>
+</section>
+
+<section class="sl chapter" data-id="ch3" data-title="Waypoint 3: Follow one reading">
+  <div class="col right chap">
+    <p class="kick">Waypoint 3 of 4</p>
+    <h2 class="huge">Follow one reading</h2>
+    <p class="lead">02:00 AM. A sensor reads <b class="flare mono">312 cm</b>. Let’s follow that one number all the way to a phone.</p>
+  </div>
+  <aside>Chapter card. Read the question out loud, pause, then move on. It tells the room where the story is going next.</aside>
+</section>
+
+<section class="sl" data-id="edge-to-cloud" data-title="Edge to cloud in four steps">
+  <div class="topbar"><h2>From the edge to the cloud, in four steps</h2></div>
+  <div class="steps4">
+    <div class="glass"><span class="kick">Step 1, at the edge</span><b class="disp">Sense</b><p>A small device on the riverbank measures water level or soil moisture.</p></div>
+    <div class="glass"><span class="kick">Step 2, over the air</span><b class="disp">Send</b><p>LoRaWAN radio carries it kilometres to a gateway.</p></div>
+    <div class="glass"><span class="kick">Step 3, in the cloud</span><b class="disp">Think</b><p>AWS stores it, checks it and learns from it.</p></div>
+    <div class="glass warm"><span class="kick flare">Step 4, to people</span><b class="disp">Act</b><p>An SMS, a siren or a dashboard warns people in time.</p></div>
+  </div>
+  <aside>“Edge” just means where things happen: the riverbank. “Cloud” is where the thinking happens. Point at the map: the light runs from the sensor, over the ridge, up to AWS and down to the village.</aside>
+</section>
+
+<section class="sl" data-id="anatomy" data-title="Anatomy of a sensor">
+  <div class="col left narrow">
+    <h2>Anatomy of a riverbank sensor</h2>
+    <div class="parts">
+      <div><span>Power</span><b>Small solar panel and a battery</b></div>
+      <div class="hot"><span>Voice</span><b>LoRa radio and antenna, kilometres of range</b></div>
+      <div><span>Brain</span><b>ESP32 microcontroller, costs about as much as lunch</b></div>
+      <div><span>Sense</span><b>Ultrasonic sensor measures the distance to the water</b></div>
+    </div>
+  </div>
+  <aside>Walk through it top to bottom on the model: panel, antenna, box, and the eye pointing at the water. Nothing here is exotic: you can buy every part in Kathmandu or online. The orange part, the radio, is what makes it work in the hills.</aside>
+</section>
+
+<section class="sl" data-id="why-lora" data-title="Why not Wi-Fi or 4G?">
+  <div class="col left narrow">
+    <h2>Why not just use Wi-Fi or 4G?</h2>
+    <div class="plist">
+      <div><b>Bluetooth</b><span>About a room. Needs a phone nearby.</span></div>
+      <div><b>Wi-Fi</b><span>About a house. Needs a router and steady power.</span></div>
+      <div><b>4G</b><span>Kilometres. Needs a tower and a SIM, and drains batteries.</span></div>
+      <div class="hot"><b>LoRa</b><span>Kilometres, on a small battery. Needs one gateway for a whole valley.</span></div>
+    </div>
+    <p class="lead snow">On a hillside with no towers and no power lines, only one of these works.</p>
+  </div>
+  <aside>Ask: which one would you pick for a sensor two days’ walk from the nearest road? The rings show rough reach, not exact numbers.</aside>
+</section>
+
+<section class="sl" data-id="lora-record" data-title="LoRa distance record">
+  <div class="col left">
+    <p class="kick">Fun fact: the LoRa distance record</p>
+    <b class="disp mega">1,336 km</b>
+    <p class="lead">From trackers on a fishing boat off the coast of Portugal to a gateway in the Canary Islands.</p>
+    <p class="body">An earlier record of 832 km was set from a weather balloon, transmitting at just 25 milliwatts.</p>
+    <p class="source">Source: The Things Network</p>
+  </div>
+  <aside>That’s roughly Kathmandu to Delhi and back. Records use perfect line of sight over the sea or from the sky. In our hills, a single ridge changes everything, which is exactly what my research measured.</aside>
+</section>
+
+<section class="sl" data-id="chirps" data-title="How LoRa chirps">
+  <div class="col left narrow">
+    <h2>How LoRa talks: it chirps</h2>
+    <p class="lead">Each LoRa message is a rising whistle, a “chirp”. Like a bird you can still hear in a noisy forest, a chirp survives through noise and over distance.</p>
+    <div class="row gap32">
+      <div class="glass flex1"><b class="disp mid">SF7</b><span>Short chirp. Fast, shorter reach.</span><svg class="chirp" viewBox="0 0 300 60"><path d="M0 30 Q 20 0 40 30 T 80 30 T 110 30 T 135 30 T 155 30 T 170 30 T 182 30 T 192 30" fill="none" stroke="#9FD8EC" stroke-width="2"/></svg></div>
+      <div class="glass warm flex1"><b class="disp mid flare">SF12</b><span>Long chirp. Slow, much further.</span><svg class="chirp" viewBox="0 0 300 60"><path d="M0 30 Q 30 0 60 30 T 120 30 T 170 30 T 210 30 T 240 30 T 262 30 T 280 30 T 294 30" fill="none" stroke="#FF9900" stroke-width="2"/></svg></div>
+    </div>
+    <p class="body">The spreading factor (SF) is how slowly you whistle. My field tests swept every SF from 7 to 12.</p>
+  </div>
+  <aside>Have the room whistle a quick rising note, then a long slow one. The slow one is easier to hear from the back. That’s SF12.</aside>
+</section>
+
+<section class="sl" data-id="mqtt" data-title="MQTT">
+  <div class="col left narrow">
+    <h2>MQTT: how devices talk</h2>
+    <p class="lead">It works like YouTube. A sensor posts to a channel, called a topic. The broker delivers it. Everyone subscribed gets it at once.</p>
+    <div class="flow">
+      <div><span class="kick">Publisher</span><b>A water-level sensor on the riverbank</b><code>nepal/sindhupalchok/river/level</code></div>
+      <div class="hot"><span class="kick flare">Broker</span><b>AWS IoT Core</b><em>receives every message and hands it to whoever subscribed.</em></div>
+      <div><span class="kick">Subscribers</span><b>Farmer’s phone app. District disaster office. SMS to the village.</b></div>
+    </div>
+    <p class="small">Fun fact: MQTT was designed in 1999 to monitor oil pipelines over satellite links, where every byte cost money. That’s why it fits on a tiny ESP32.</p>
+  </div>
+  <aside>The sensor never needs to know who’s listening. One sensor can feed a farmer’s app, a disaster office and an SMS alert at the same time. Point at the three orange lines leaving the cloud.</aside>
+</section>
+
+<section class="sl" data-id="message" data-title="One message">
+  <div class="col left">
+    <h2>What one message actually looks like</h2>
+    <div class="glass code"><p class="mono small">Topic: nepal/sindhupalchok/river/level</p>
+<pre>{
+  <k>"site"</k>:       "sindhupalchok-river-01",
+  <k>"level_cm"</k>:   <o>312</o>,
+  <k>"rain_mm_hr"</k>: 41,
+  <k>"battery_v"</k>:  3.9,
+  <k>"time"</k>:       "2026-07-14T02:00:00+05:45"
+}</pre></div>
+    <div class="row gap32">
+      <div class="rule flex1"><b>Tiny</b><span>About 150 bytes. One photo on your phone is thousands of times bigger.</span></div>
+      <div class="rule flex1"><b>Readable</b><span>Plain JSON that any language can parse.</span></div>
+      <div class="rule warm flex1"><b class="flare">312 cm</b><span>The only number that matters at 2 AM.</span></div>
+    </div>
+  </div>
+  <aside>This is the whole message. Point at level_cm: that’s what the cloud will check in a moment. The rest is context: where, how much rain, how healthy the battery is, and when.</aside>
+</section>
+
+<section class="sl" data-id="aws-pipeline" data-title="The AWS pipeline">
+  <div class="topbar"><h2>The AWS pipeline, as a metro map</h2></div>
+  <div class="metro">
+    <div class="line warm"><p class="kick flare">Alert line: from sensor to SMS in seconds</p>
+      <ol><li><b>Sensor</b><span>ESP32 + LoRa</span></li><li><b>Gateway</b><span>radio to internet</span></li><li class="x"><b>IoT Core</b><span>MQTT broker</span></li><li><b>Rules</b><span>routes each message</span></li><li><b>Lambda</b><span>is the water too high?</span></li><li><b>SNS</b><span>sends the SMS</span></li></ol></div>
+    <div class="line"><p class="kick">Learning line: months of readings become predictions</p>
+      <ol><li class="x"><b>IoT Core</b><span>copies every message</span></li><li><b>S3</b><span>stores everything</span></li><li><b>Athena</b><span>query with SQL</span></li><li><b>QuickSight</b><span>dashboards</span></li><li><b>SageMaker</b><span>learns to predict</span></li></ol></div>
+  </div>
+  <aside>Two lines, one interchange: IoT Core. AWS IoT Core for LoRaWAN even acts as the LoRaWAN network server, so you don’t run your own.</aside>
+</section>
+
+<section class="sl" data-id="lambda" data-title="The whole alert">
+  <div class="col left">
+    <h2>The whole alert fits on one slide</h2>
+    <div class="glass code"><p class="kick">1. IoT rule</p>
+<pre><k>SELECT</k> * <k>FROM</k> 'nepal/+/river/level'
+<k>WHERE</k> level_cm &gt; <o>300</o></pre>
+      <p class="small">The <b class="mono flare">+</b> is a wildcard: every river in Nepal, one rule.</p></div>
+    <div class="glass code"><p class="kick">2. Lambda function</p>
+<pre><k>import</k> boto3
+sns = boto3.client(<s>"sns"</s>)
+
+<k>def</k> handler(event, context):
+    level = event[<s>"level_cm"</s>]
+    sns.publish(
+        TopicArn=ALERT_TOPIC,
+        Message=f<s>"Flood warning: river at {level} cm."</s>
+    )</pre></div>
+  </div>
+  <aside>Read the rule out loud: “Give me every river level above 300 centimetres.” The Lambda only runs when that’s true, so you pay almost nothing on dry days.</aside>
+</section>
+
+<section class="sl" data-id="three-minutes" data-title="Why three minutes?">
+  <div class="col left">
+    <h2>Why three minutes, not three seconds?</h2>
+    <div class="clock">
+      <div><b class="mono">02:00:00</b><strong>The reading crosses the line</strong><span>312 cm, above the 300 cm alert level.</span></div>
+      <div><b class="mono">02:00:02</b><strong>Over the ridge and into AWS</strong><span>LoRa to the gateway, MQTT to IoT Core, the rule matches. A couple of seconds.</span></div>
+      <div class="f"><b class="mono">02:01, 02:02</b><strong>Two more readings, to be sure</strong><span>One splash or a branch under the sensor shouldn’t wake a whole village at 2 AM.</span></div>
+      <div class="f hot"><b class="mono flare">02:03</b><strong>The alert goes out</strong><span>Lambda calls SNS. Every subscribed phone buzzes.</span></div>
+    </div>
+    <p class="small">The rule on the last slide alerts on the very first reading. Waiting for a few in a row is the first upgrade you’d make.</p>
+  </div>
+  <aside>This timeline is an example of a sensible design, not a measured system. The point for students: the cloud is fast, seconds; the delay is a choice. False alarms train people to ignore warnings, so you confirm before you wake a village. Watch the white dot with “312 cm” travel the chain on the map.</aside>
+</section>
+
+<section class="sl" data-id="sms" data-title="Different ending">
+  <div class="col right">
+    <h2 class="huge">Same village.</h2>
+    <h2 class="huge">Same night.</h2>
+    <h2 class="huge flare">Different ending.</h2>
+    <p class="lead">Three minutes after the river crossed the line, every subscribed phone buzzed.</p>
+  </div>
+  <div class="phone left-phone alert">
+    <div class="ph-top"><span>No service</span><span>22%</span></div>
+    <div class="ph-time">02:03</div>
+    <div class="ph-sub">Monsoon night, upstream village</div>
+    <div class="ph-card"><span class="ph-app">River Alert, now</span><b>Flood warning: river at 312 cm. Move to higher ground now.</b></div>
+    <div class="ph-foot flare">1 warning received</div>
+  </div>
+  <aside>The callback to the opening phone. Pause here. This is the whole talk in one slide.</aside>
+</section>
+
+<section class="sl" data-id="big-data" data-title="One reading, a million">
+  <div class="col left narrow">
+    <div class="rule"><b class="disp mid">1 reading</b><p class="body">“Soil moisture is 32%.” So what?</p></div>
+    <div class="rule f"><b class="disp mid">1,000,000 readings</b><p class="body">“This slope slid before after days of heavy rain, and today looks the same.”</p></div>
+    <p class="lead flare f">That’s a prediction.</p>
+  </div>
+  <aside>Point at the lone dot: one reading is a number. Click: millions of readings. Click: the orange line, hidden inside the noise, is a pattern. That pattern is a prediction.</aside>
+</section>
+
+<section class="sl" data-id="many-uses" data-title="Change the sensor">
+  <div class="col left narrow">
+    <h2>Change the sensor, keep the pipeline</h2>
+    <div class="uses">
+      <div><b>Agriculture</b><span>Soil moisture, temperature</span><em>“Water your crop today” SMS to farmers</em></div>
+      <div><b>Flood</b><span>River water level</span><em>Early warning for villages downstream</em></div>
+      <div><b>Landslide</b><span>Soil moisture and tilt</span><em>Alert when a slope starts moving</em></div>
+      <div><b>Glacial lake</b><span>Lake water level</span><em>Warning for the valleys below</em></div>
+    </div>
+  </div>
+  <aside>Build the pipeline once, swap the sensor. The same setup that saves a village can also save a harvest.</aside>
+</section>
+
+<section class="sl chapter" data-id="ch4" data-title="Waypoint 4: The hills fight back">
+  <div class="col left chap">
+    <p class="kick">Waypoint 4 of 4</p>
+    <h2 class="huge">The hills fight back</h2>
+    <p class="lead">Theory is easy. Then I carried the radios up real hills.</p>
+  </div>
+  <aside>Chapter card. Read the question out loud, pause, then move on. It tells the room where the story is going next.</aside>
+</section>
+
+<section class="sl" data-id="my-research" data-title="Three hills">
+  <div class="col right narrow">
+    <h2>I carried radios up three hills</h2>
+    <div class="row gap32 aic">
+      <img class="photo tall" src="img/boards.jpg" alt="LoRa boards used in the field">
+      <div class="facts small-facts">
+        <div><span>Radio</span><b>Ra-08H LoRa module + ESP32</b></div>
+        <div><span>Position</span><b>GPS module, tagged on every reading</b></div>
+        <div><span>Logging</span><b>microSD card</b></div>
+        <div><span>Settings swept</span><b>SF7 to SF12, at 2, 8 and 14 dBm</b></div>
+        <div><span>Measured</span><b>Signal strength (RSSI) and quality (SNR)</b></div>
+        <div><span>Hills</span><b>Mankal, Raniban, Dharmasthali</b></div>
+      </div>
+    </div>
+  </div>
+  <aside>The question: in Nepal’s hills, how far can a LoRa signal really go, and what kills it?</aside>
+</section>
+
+<section class="sl full" data-id="test-site" data-title="This is a test site">
+  <img class="bleed" src="img/hilltop.jpg" alt="Hilltop test site">
+  <div class="col left bottom">
+    <h2 class="huge">This is a test site</h2>
+    <p class="lead snow">The radio sits on my backpack. The target is the next ridge. Between them: grass, forest, cloud, and a lot of air.</p>
+  </div>
+  <aside>Let the photo breathe for a few seconds. This is what “field research” actually looks like.</aside>
+</section>
+
+<section class="sl" data-id="field-fails" data-title="What went wrong">
+  <div class="topbar"><h2>What went wrong (a lot)</h2></div>
+  <div class="three">
+    <figure><img src="img/trail.jpg" alt=""><figcaption><b>The radio refused</b><span>The factory firmware only spoke LoRaWAN, not point-to-point. So I wrote my own.</span></figcaption></figure>
+    <figure class="f"><img src="img/road.jpg" alt=""><figcaption><b>Getting there</b><span>Motorbike, then on foot. One site was such a climb I never went back.</span></figcaption></figure>
+    <figure class="f"><img src="img/night.jpg" alt=""><figcaption><b>Racing the sunset</b><span>Some sweeps ran past dark, lit only by the little screen.</span></figcaption></figure>
+  </div>
+  <aside>Tell these as stories, not bullet points. Students love hearing that things broke. Click to bring in each story.</aside>
+</section>
+
+<section class="sl" data-id="desk" data-title="Built on a cutting mat">
+  <img class="photo side" src="img/desk.jpg" alt="Breadboard prototype on a cutting mat">
+  <div class="col right narrow">
+    <h2>Built on a cutting mat, tested on a hill</h2>
+    <div class="glass"><b>Spaghetti is a feature</b><span>Breadboard and jumper wires: easy to fix on a hilltop with no soldering iron.</span></div>
+    <div class="glass"><b>“Resume log?”</b><span>After a restart, the firmware offers to pick up the log where it stopped, instead of starting the whole sweep again.</span></div>
+    <p class="lead snow">Real IoT is 20% code and 80% batteries, weather and walking.</p>
+  </div>
+  <aside>Point at the little screen. Explain why resume mattered: a restart on a hill shouldn’t mean starting the sweep over.</aside>
+</section>
+
+<section class="sl" data-id="lessons" data-title="What the hills taught me">
+  <div class="col left narrow">
+    <h2>What the hills taught me</h2>
+    <div class="stack">
+      <div class="glass"><b>Line of sight is everything</b><span>A ridge between two radios can kill a link that works fine in the open.</span></div>
+      <div class="glass"><b>Reach costs speed</b><span>A higher spreading factor reaches further, but sends slower and uses more battery.</span></div>
+      <div class="glass warm"><b class="flare">[Your key finding]</b><span>[e.g. signal fell from __ dBm to __ dBm over __ km at __]</span></div>
+      <div class="glass"><b>Machine learning plans the hike</b><span>A path-loss model predicts where a sensor will be heard, before anyone climbs.</span></div>
+    </div>
+  </div>
+  <aside>On the map: Mankal to Raniban is clear; Raniban to Dharmasthali dies at the ridge. Replace the orange item with your strongest real number. One real result beats ten diagrams.</aside>
+</section>
+
+<section class="sl" data-id="demo" data-title="Live demo">
+  <div class="topbar"><h2>Live demo: let’s send an alert</h2></div>
+  <div class="steps4 three-up">
+    <div class="glass"><span class="kick">On my desk</span><b class="disp">ESP32 publishes</b><p>I’ll fake a rising river by moving my hand towards the sensor.</p></div>
+    <div class="glass"><span class="kick">In AWS</span><b class="disp">Rule and Lambda fire</b><p>Watch the MQTT test client in the AWS console.</p></div>
+    <div class="glass warm"><span class="kick flare">In this room</span><b class="disp">A phone buzzes</b><p>Whoever’s number is subscribed gets the SMS.</p></div>
+  </div>
+  <p class="lead foot">If the Wi-Fi fails, that’s also a lesson about networks.</p>
+  <aside>Optional. If you do it, have a recorded video as backup. If you skip it, delete this slide.</aside>
+</section>
+
+<section class="sl" data-id="recap" data-title="Sense, send, think, act">
+  <div class="col left">
+    <h2 class="huge">Sense.<br>Send.<br>Think.<br><span class="flare">Act.</span></h2>
+    <p class="lead">One reading, from a riverbank to a phone, in four moves. Everything else is detail you can learn one weekend at a time.</p>
+  </div>
+  <aside>The recap. Point at the travelling “312 cm” on the map and name each move as it passes: sensor, gateway, AWS, village.</aside>
+</section>
+
+<section class="sl" data-id="start-here" data-title="Build your first system">
+  <div class="col left">
+    <h2>Build your first early-warning system this month</h2>
+    <ol class="route weeks">
+      <li><span>Week 1</span><b>Get an ESP32</b><em>Add a LoRa module, or start with Wi-Fi</em></li>
+      <li><span>Week 2</span><b>Open an AWS account</b><em>Set a budget alert first, then use the Free Tier</em></li>
+      <li><span>Week 3</span><b>Publish one message</b><em>Send one MQTT message to AWS IoT Core</em></li>
+      <li class="summit"><span>Week 4</span><b>Send one alert</b><em>Trigger an SMS with Lambda and SNS</em></li>
+    </ol>
+    <p class="lead snow">One sensor, one Lambda, one alert. That’s the first heartbeat of an early-warning system.</p>
+  </div>
+  <aside>Leave them with something doable. Remind them to set a budget alert first.</aside>
+</section>
+
+<section class="sl" data-id="finale" data-title="Remember Tsho Rolpa?">
+  <div class="col center">
+    <p class="lead">Remember Tsho Rolpa?</p>
+    <h2 class="huge">The sensor worked.</h2>
+    <h2 class="huge dimtxt">The network didn’t.</h2>
+    <h2 class="huge flare f">Now you know how to build the network.</h2>
+    <span class="f"></span>
+  </div>
+  <aside>This is the “aha”. Read the first line slowly. Pause. Click: the last line appears. Click again: the map pulls back and the lake’s signal now makes it all the way out, over the ridge, to the cloud and down to the village. Say the last line, then stop talking for two full seconds before you go to questions.</aside>
+</section>
+
+<section class="sl cover qna" data-id="qna" data-title="Questions?">
+  <img class="logo" src="img/scd-logo-white.png" alt="AWS Student Community Day Kathmandu 2026">
+  <div class="col left bottom">
+    <h1>Questions?</h1>
+    <p class="lead snow">Edge to Cloud: how a tiny sensor can save a life</p>
+    <div class="byline"><span class="strong">Peter Karki</span><span>linkedin.com/in/peterkarki</span><span>github.com/pinological</span><span>@pinologicall</span></div>
+  </div>
+  <div class="qrcard"><div id="qr"></div><div class="qt"><p>Open on your phone</p><span id="qrurl"></span><button id="qcopy" type="button">Copy link</button></div></div>
+  <aside>If it’s quiet: “What would you put a sensor on in your own village?”</aside>
+</section>
+
+</div>
+<div id="notes"><div class="nh"><span class="nn"></span><span class="nt">Timer starts on first key</span></div><div class="nb"></div><div class="ns"></div></div>
+<div id="overview"><div class="grid"></div></div>
+<div id="help">Next: Right, Space, click, clicker<br>Back: Left<br>N: speaker notes and timer<br>O: all slides<br>F: fullscreen<br>H: this help</div>
+<div id="mnav"><button id="mp" aria-label="Previous slide"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><div class="mc"><span id="mt"></span><div class="mbar"><i id="mb"></i></div></div><button id="mo" aria-label="All slides"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><button id="mn" aria-label="Next slide"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div>
+<div id="hint">H for help</div>
+<div id="loading">Building the valley</div>
+<script src="app.js"></script>
+</body>
+</html>
