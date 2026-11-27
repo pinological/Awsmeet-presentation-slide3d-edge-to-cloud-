@@ -23,8 +23,12 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden;color:var(-
 .lbl i{position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%;border:1.5px solid var(--ice)}
 .lbl span{position:absolute;left:14px;top:-26px;padding:6px 10px;background:rgba(5,8,15,.6);border-left:1px solid var(--ice);backdrop-filter:blur(6px)}
 #stage{position:fixed;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0}
-section.sl{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .7s ease,visibility 0s linear .7s}
-section.sl.on{opacity:1;visibility:visible;transition:opacity .9s ease .25s,visibility 0s}
+section.sl{position:absolute;inset:0;visibility:hidden;transition:visibility 0s linear .7s}
+section.sl.on{visibility:visible;transition:visibility 0s}
+/* fade children, never the section: opacity on an ancestor breaks backdrop-filter and causes a flicker pop */
+section.sl>*:not(.f),section.sl::before{opacity:0;transition:opacity .7s ease}
+section.sl.on>*:not(.f),section.sl.on::before{opacity:1;transition:opacity .9s ease .25s}
+section.sl>aside{opacity:1}
 section.sl::before{content:'';position:absolute;inset:calc(var(--oy,0px)*-1) calc(var(--ox,0px)*-1);pointer-events:none;background:linear-gradient(90deg,rgba(5,8,15,.82) 0,rgba(5,8,15,.82) var(--ox,0px),rgba(5,8,15,.55) calc(var(--ox,0px) + 653px),rgba(5,8,15,0) calc(var(--ox,0px) + 1114px))}
 section.sl:has(.col.right)::before{background:linear-gradient(270deg,rgba(5,8,15,.82) 0,rgba(5,8,15,.82) var(--ox,0px),rgba(5,8,15,.55) calc(var(--ox,0px) + 653px),rgba(5,8,15,0) calc(var(--ox,0px) + 1114px))}
 section.sl:has(.col.center)::before,section.sl:has(.topbar)::before{background:radial-gradient(70% 70% at 50% 50%,rgba(5,8,15,.6),rgba(5,8,15,.2))}
@@ -321,7 +325,7 @@ body.m #mnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:15;alig
 #mnav .mbar i{display:block;height:100%;background:var(--ice);width:0;transition:width .4s}
 body.m #overview{padding:24px 16px 90px}
 body.m #overview .grid{grid-template-columns:1fr}
-@media (prefers-reduced-motion: reduce){.f,section.sl{transition:none!important}.alert .ph-card{animation:none}}
+@media (prefers-reduced-motion: reduce){.f,section.sl,section.sl>*:not(.f),section.sl::before{transition:none!important}.alert .ph-card{animation:none}}
 </style>
 </head>
 <body>
