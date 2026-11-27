@@ -194,6 +194,10 @@ code{font:400 20px 'IBM Plex Mono',monospace;color:var(--ice)}
 #overview b{font:500 13px 'IBM Plex Mono',monospace;color:var(--ice)}
 #help{position:fixed;right:24px;bottom:24px;padding:18px 22px;border-radius:14px;background:rgba(5,8,15,.92);border:1px solid rgba(220,235,245,.2);font:400 14px/1.8 'IBM Plex Mono',monospace;color:#c9d2d9;display:none;z-index:10}
 #help.open{display:block}
+#fs{all:unset;position:fixed;right:22px;top:20px;width:42px;height:42px;border-radius:14px;display:grid;place-items:center;cursor:pointer;z-index:13;color:rgba(220,235,245,.7);background:linear-gradient(160deg,rgba(220,235,245,.12),rgba(220,235,245,.03));border:1px solid rgba(220,235,245,.16);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);transition:color .25s,border-color .25s,opacity .4s;opacity:.55}
+#fs:hover,#fs:focus-visible{opacity:1;color:var(--ice);border-color:rgba(159,216,236,.5)}
+#fs svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;grid-area:1/1}
+#fs .i-out{display:none}body.fsx #fs .i-in{display:none}body.fsx #fs .i-out{display:block}
 #hint{position:fixed;right:48px;bottom:52px;font:400 12px 'IBM Plex Mono',monospace;color:#3f4a55;pointer-events:none}
 #loading{position:fixed;inset:0;background:var(--ink);display:flex;align-items:center;justify-content:center;z-index:30;transition:opacity .9s;font:400 14px 'IBM Plex Mono',monospace;color:var(--ice)}
 #loading.done{opacity:0;pointer-events:none}
@@ -237,7 +241,7 @@ body.m #prog{display:none}
 body.m section.sl.on{animation:mIn .3s ease-out}
 /* ---------- phone mode: 1080 wide logical stage, one scrolling column per slide ---------- */
 #mnav{display:none}
-body.m #hint,body.m #vignette{display:none}
+body.m #hint,body.m #vignette,body.m #fs{display:none}
 body.m #stage{width:1080px}
 body.m section.sl{overflow-y:auto;overflow-x:hidden;padding:130px 64px 230px;display:flex;flex-direction:column;gap:44px;justify-content:safe center;-webkit-overflow-scrolling:touch}
 body.m section.sl::before,body.m section.sl:has(.col.right)::before,body.m section.sl:has(.col.center)::before,body.m section.sl:has(.topbar)::before{background:linear-gradient(180deg,rgba(5,8,15,0),rgba(5,8,15,0));position:fixed}
@@ -856,6 +860,7 @@ sns = boto3.client(<s>"sns"</s>)
 <div id="help">Next: Right, Space, click, clicker<br>Back: Left<br>N: speaker notes and timer<br>O: all slides<br>F: fullscreen<br>H: this help</div>
 <div id="prog" aria-hidden="true"><i class="pf"></i></div>
 <div id="mnav"><button id="mp" aria-label="Previous slide"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><div class="mc"><span id="mt"></span><div class="mbar"><i id="mb"></i></div></div><button id="mo" aria-label="All slides"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><button id="mn" aria-label="Next slide"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div>
+<button id="fs" type="button" aria-label="Toggle fullscreen" title="Fullscreen (F)"><svg class="i-in" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="i-out" viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
 <div id="hint">H for help</div>
 <div id="loading">Building the valley</div>
 <script src="app.js"></script>
