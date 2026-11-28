@@ -222,6 +222,22 @@ code{font:400 20px 'IBM Plex Mono',monospace;color:var(--ice)}
 .cmp-cap{margin:8px 0 0 150px;font-size:22px;color:var(--snow)}
 body.m .cmp{position:static!important;width:auto!important}
 body.m .cmp-row{height:80px}body.m .cmp-l{width:190px;font-size:30px}body.m .cmp-bar em,body.m .cmp-ax,body.m .cmp-flood b{font-size:24px}body.m .cmp-ax{margin-left:210px}body.m .cmp-cap{margin-left:0;font-size:36px}body.m .cmp-flood{display:none}
+/* isometric data map */
+.iso{position:absolute;right:80px;top:330px;width:860px;height:560px;perspective:1800px}
+.iso-plane{position:absolute;left:170px;top:20px;width:520px;height:480px;transform-style:preserve-3d;transform:rotateX(58deg) rotateZ(-36deg) scale(1.22);border-radius:18px;
+ box-shadow:1px 1px 0 rgba(159,216,236,.45),2px 2px 0 rgba(120,180,205,.35),3px 3px 0 rgba(90,150,175,.3),4px 4px 0 rgba(70,120,145,.25),6px 6px 0 rgba(50,90,115,.22),8px 8px 0 rgba(40,70,95,.2),10px 10px 0 rgba(30,55,75,.18),40px 50px 70px rgba(0,0,0,.55);border:1px solid rgba(159,216,236,.4);overflow:visible}
+.iso-plane img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:18px;filter:saturate(.8) brightness(.78) contrast(1.05)}
+.iso-plane::after{content:'';position:absolute;inset:0;border-radius:18px;background:linear-gradient(135deg,rgba(159,216,236,.16),rgba(5,8,15,.35));pointer-events:none}
+.dz{position:absolute;border-radius:50%;border:2px dashed rgba(255,140,60,.9);background:radial-gradient(circle,rgba(255,110,40,.45),rgba(255,110,40,.08) 70%);box-shadow:0 0 30px rgba(255,120,50,.5);animation:dzp 2.8s ease-in-out infinite}
+.dz1{left:30px;top:310px;width:150px;height:130px}.dz2{left:-24px;top:130px;width:110px;height:150px;animation-delay:-1.4s}
+@keyframes dzp{50%{opacity:.55;transform:scale(1.08)}}
+.dzl{position:absolute;font:500 15px 'IBM Plex Mono',monospace;color:#ffb27a;background:rgba(5,8,15,.7);padding:4px 10px;border-radius:8px;border:1px solid rgba(255,140,60,.5);white-space:nowrap;transform:translateZ(40px)}
+.dzl1{left:50px;top:352px}.dzl2{left:-30px;top:196px}
+.iso-cap{position:absolute;left:0;right:0;bottom:0;margin:0;text-align:center;font-size:21px;color:rgba(225,238,246,.75)}
+body.m .iso{position:static;width:auto;height:auto;perspective:none}
+body.m .iso-plane{position:relative;left:0;top:0;width:100%;height:auto;aspect-ratio:535/494;transform:none;box-shadow:none}
+body.m .iso-cap{position:static;margin-top:20px;font-size:34px;text-align:left}
+@media (prefers-reduced-motion: reduce){.dz{animation:none}}
 /* global slide timeline */
 #prog{position:fixed;left:48px;right:48px;bottom:24px;height:14px;display:flex;gap:3px;align-items:flex-end;z-index:12}
 #prog button{all:unset;flex:1;height:14px;display:flex;align-items:flex-end;cursor:pointer;position:relative}
@@ -796,11 +812,19 @@ sns = boto3.client(<s>"sns"</s>)
     <div class="stack">
       <div class="glass"><b>Line of sight is everything</b><span>A ridge between two radios can kill a link that works fine in the open.</span></div>
       <div class="glass"><b>Reach costs speed</b><span>A higher spreading factor reaches further, but sends slower and uses more battery.</span></div>
-      <div class="glass warm"><b class="flare">[Your key finding]</b><span>[e.g. signal fell from __ dBm to __ dBm over __ km at __]</span></div>
+      <div class="glass warm"><b class="flare">Slow chirps carry further</b><span>On Mankal, 200 to 300 m out, SF12 delivered 99% of packets. SF7 delivered 44%.</span></div>
       <div class="glass"><b>Machine learning plans the hike</b><span>A path-loss model predicts where a sensor will be heard, before anyone climbs.</span></div>
     </div>
   </div>
-  <aside>On the map: Mankal to Raniban is clear; Raniban to Dharmasthali dies at the ridge. Replace the orange item with your strongest real number. One real result beats ten diagrams.</aside>
+  <div class="iso" aria-hidden="false">
+    <div class="iso-plane">
+      <img src="img/signal-map.jpg" alt="Satellite map of the Kathmandu valley hills with measurement points coloured by signal strength, stations A, C and D marked">
+      <i class="dz dz1"></i><i class="dz dz2"></i>
+      <span class="dzl dzl1">Dead zone</span><span class="dzl dzl2">Dead zone</span>
+    </div>
+    <p class="iso-cap">Our field measurements, mapped across the hills.</p>
+  </div>
+  <aside>On the map: Mankal to Raniban is clear; Raniban to Dharmasthali dies at the ridge. The orange item is from the first Mankal sweep trial (8 and 14 dBm, valid rows): at 200 to 300 m, SF12 delivered 99 percent, SF7 44 percent. Swap in a number from your final 27-sweep dataset if it is stronger.</aside>
 </section>
 
 <section class="sl demo-s" data-id="demo" data-title="Live demo">
